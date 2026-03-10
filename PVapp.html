@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PV Cost Estimator Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --bg-elevated: #111113;
+      --card: #161618;
+      --card-hover: #1c1c1f;
+      --border: #2a2a2e;
+      --border-active: #404048;
+      --fg: #f4f4f5;
+      --fg-muted: #8a8a8f;
+      --accent: #f97316;
+      --accent-dim: rgba(249, 115, 22, 0.15);
+      --accent-glow: rgba(249, 115, 22, 0.4);
+      --success: #22c55e;
+      --info: #3b82f6;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+    .bg-grid {
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%);
+      top: -200px;
+      right: -200px;
+    }
+    .orb-2 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(59,130,246,0.05) 0%, transparent 70%);
+      bottom: -100px;
+      left: -100px;
+    }
+
+    .input-field {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 0.625rem 0.875rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      width: 100%;
+      font-size: 0.9375rem;
+    }
+    .input-field:hover { border-color: var(--border-active); }
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .select-field {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 0.625rem 2rem 0.625rem 0.875rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      width: 100%;
+      font-size: 0.9375rem;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a8a8f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+    }
+    .select-field:hover { border-color: var(--border-active); }
+    .select-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .card:hover { border-color: var(--border-active); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--fg);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background: var(--card); border-color: var(--border-active); }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--fg-muted);
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover {
+      background: var(--card);
+      color: var(--fg);
+      border-color: var(--border-active);
+    }
+
+    .cost-bar { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+    .cost-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease-out; }
+
+    .section-reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .section-reveal.visible { opacity: 1; transform: translateY(0); }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px var(--accent-dim); }
+      50% { box-shadow: 0 0 40px var(--accent-glow); }
+    }
+    .result-highlight { animation: pulse-glow 2s ease-in-out infinite; }
+
+    .hidden-field { display: none; }
+    
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-content {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+
+    .settings-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 0.5rem;
+      border-radius: 4px;
+      width: 100%;
+      font-size: 0.875rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .settings-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#f97316"></head>
+<body class="bg-grid">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="p-6 border-b border-[var(--border)] flex justify-between items-center">
+        <div>
+          <h2 class="text-xl font-semibold">Cost Database Settings</h2>
+          <p class="text-sm text-[var(--fg-muted)]">Modify rates, factors, and engineering properties</p>
+        </div>
+        <button id="closeSettingsBtn" class="btn-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto flex-1">
+        <div id="settingsContainer" class="space-y-8">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-[var(--border)] flex justify-between items-center bg-[var(--bg)]">
+        <button id="resetDefaultsBtn" class="btn-secondary text-sm flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          Reset to Defaults
+        </button>
+        <button id="saveSettingsBtn" class="btn-primary text-sm">Save & Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="relative z-10 min-h-screen">
+    
+    <!-- Header -->
+    <header class="border-b border-[var(--border)] bg-[var(--bg-elevated)]/80 backdrop-blur-xl sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-[var(--accent)] flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-lg font-semibold tracking-tight">PV Cost Estimator</h1>
+              <p class="text-xs text-[var(--fg-muted)]">Western Europe 2024/2025</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="openSettingsBtn" class="btn-icon" title="Edit Cost Database">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </button>
+            <button id="resetBtn" class="btn-secondary text-sm hidden sm:flex items-center gap-2">
+              Reset
+            </button>
+            <button id="exportBtn" class="btn-primary text-sm flex items-center gap-2">
+              Export
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="grid lg:grid-cols-[1fr,400px] gap-8">
+        
+        <!-- Input sections -->
+        <div class="space-y-6">
+          
+          <!-- Geometry Section -->
+          <section class="card p-6 section-reveal" data-section="geometry">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-8 h-8 rounded-md bg-[var(--accent-dim)] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="font-semibold">Geometry</h2>
+                <p class="text-sm text-[var(--fg-muted)]">Define vessel dimensions and orientation</p>
+              </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Orientation</label>
+                <select id="orientation" class="select-field">
+                  <option value="vertical">Vertical</option>
+                  <option value="horizontal">Horizontal</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Design Pressure (bar)</label>
+                <input type="number" id="pressure" class="input-field" value="10" min="0.5" step="0.5">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Design Temperature (C)</label>
+                <input type="number" id="temperature" class="input-field" value="80" min="-20" step="10">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Internal Diameter (mm)</label>
+                <input type="number" id="diameter" class="input-field" value="2500" min="200" step="100">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Shell Length T/T (mm)</label>
+                <input type="number" id="length" class="input-field" value="6000" min="500" step="100">
+              </div>
+            </div>
+          </section>
+
+          <!-- Materials Section -->
+          <section class="card p-6 section-reveal" data-section="materials">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-8 h-8 rounded-md bg-[var(--accent-dim)] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="font-semibold">Materials</h2>
+                <p class="text-sm text-[var(--fg-muted)]">Select shell material and internal lining</p>
+              </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Shell Material</label>
+                <select id="material" class="select-field">
+                  <!-- Options populated by JS -->
+                </select>
+              </div>
+              <div id="claddingGroup">
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Internal Cladding</label>
+                <select id="cladding" class="select-field">
+                  <!-- Options populated by JS -->
+                </select>
+              </div>
+            </div>
+            <p id="peWarning" class="hidden text-xs text-[var(--info)] mt-3 p-2 bg-blue-500/10 rounded">
+              Note: PE100 vessels typically do not use internal cladding or painting. These options have been disabled.
+            </p>
+          </section>
+
+          <!-- Nozzles Section -->
+          <section class="card p-6 section-reveal" data-section="nozzles">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-8 h-8 rounded-md bg-[var(--accent-dim)] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="font-semibold">Nozzles</h2>
+                <p class="text-sm text-[var(--fg-muted)]">Define nozzle quantities by size range</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Less than 2"</label>
+                <input type="number" id="nozzleSmall" class="input-field text-center" value="4" min="0">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">3" - 6"</label>
+                <input type="number" id="nozzleMedium" class="input-field text-center" value="6" min="0">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">8" - 12"</label>
+                <input type="number" id="nozzleLarge" class="input-field text-center" value="2" min="0">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Manways (DN500)</label>
+                <input type="number" id="manways" class="input-field text-center" value="1" min="0">
+              </div>
+            </div>
+          </section>
+
+          <!-- Internals Section -->
+          <section class="card p-6 section-reveal" data-section="internals">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-8 h-8 rounded-md bg-[var(--accent-dim)] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="font-semibold">Internals</h2>
+                <p class="text-sm text-[var(--fg-muted)]">Configure vessel internals and packing</p>
+              </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Internal Type</label>
+                <select id="internalType" class="select-field">
+                  <!-- Options populated by JS -->
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">
+                  <span id="internalUnitLabel">Quantity</span>
+                </label>
+                <input type="number" id="internalQty" class="input-field" value="0" min="0" step="0.5">
+              </div>
+            </div>
+          </section>
+
+          <!-- Supports & Finishing Section -->
+          <section class="card p-6 section-reveal" data-section="finishing">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-8 h-8 rounded-md bg-[var(--accent-dim)] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                  <path d="m9 12 2 2 4-4"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="font-semibold">Supports & Finishing</h2>
+                <p class="text-sm text-[var(--fg-muted)]">Define support type, painting, and insulation</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Support Type</label>
+                  <select id="supportType" class="select-field">
+                    <!-- Options populated by JS -->
+                  </select>
+                </div>
+                <div id="paintGroup">
+                  <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Paint Specification</label>
+                  <select id="paintType" class="select-field">
+                    <!-- Options populated by JS -->
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Insulation Type</label>
+                  <select id="insulationType" class="select-field">
+                    <!-- Options populated by JS -->
+                  </select>
+                </div>
+              </div>
+              
+              <div id="insulationThicknessGroup" class="opacity-50 pointer-events-none transition-opacity">
+                <label class="block text-sm font-medium text-[var(--fg-muted)] mb-2">Insulation Thickness (mm)</label>
+                <input type="number" id="insulationThickness" class="input-field" value="100" min="25" step="25" style="max-width: 150px;">
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- Results Panel -->
+        <div class="lg:sticky lg:top-24 h-fit space-y-6">
+          
+          <!-- Summary Card -->
+          <div class="card p-6 result-highlight section-reveal" data-section="results">
+            <div class="text-center mb-6">
+              <p class="text-sm text-[var(--fg-muted)] uppercase tracking-wider mb-2">Total Estimated Cost</p>
+              <p id="totalCost" class="text-4xl font-bold text-[var(--accent)] font-mono">€0</p>
+              <p class="text-xs text-[var(--fg-muted)] mt-2">Excludes VAT | 2024 WE Rates</p>
+            </div>
+
+            <!-- Vessel Preview -->
+            <div class="bg-[var(--bg)] rounded-lg p-4 mb-6">
+              <svg id="vesselSvg" viewBox="0 0 200 300" class="w-full h-40">
+                <!-- Will be drawn by JS -->
+              </svg>
+              <div class="flex justify-between text-xs text-[var(--fg-muted)] font-mono mt-2">
+                <span>ID: <span id="previewDiameter">2500</span>mm</span>
+                <span>L: <span id="previewLength">6000</span>mm</span>
+                <span>t: <span id="previewThickness">0</span>mm</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 text-center">
+              <div class="bg-[var(--bg)] rounded-lg p-3">
+                <p class="text-xs text-[var(--fg-muted)] mb-1">Empty Weight</p>
+                <p id="totalWeight" class="font-semibold font-mono">0 kg</p>
+              </div>
+              <div class="bg-[var(--bg)] rounded-lg p-3">
+                <p class="text-xs text-[var(--fg-muted)] mb-1">Wall Thickness</p>
+                <p id="wallThickness" class="font-semibold font-mono">0 mm</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cost Breakdown -->
+          <div class="card p-6 section-reveal" data-section="breakdown">
+            <h3 class="font-semibold mb-4">Cost Breakdown</h3>
+            
+            <div id="costBreakdown" class="space-y-3">
+              <!-- Generated by JS -->
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-[var(--border)]">
+              <div class="flex justify-between text-sm">
+                <span class="text-[var(--fg-muted)]">Engineering & Contingency (15%)</span>
+                <span id="contingency" class="font-mono">€0</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-[var(--border)] mt-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[var(--fg-muted)]">
+          <p>Estimate based on Western European industrial rates. Actual costs may vary.</p>
+          <p class="font-mono">Data: 2024/2025</p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // DEFAULT DATABASE - Western Europe 2024/2025
+    // ==========================================
+    const DEFAULT_DATABASE = {
+      materials: {
+        CS: { 
+          name: 'Carbon Steel', 
+          costPerKg: 9.50, 
+          fabCostPerKg: 12.00, 
+          allowableStress: 138, // MPa
+          density: 7850, // kg/m³
+          isPlastic: false 
+        },
+        SS304: { 
+          name: 'SS304', 
+          costPerKg: 18.00, 
+          fabCostPerKg: 18.00, 
+          allowableStress: 115, 
+          density: 7930, 
+          isPlastic: false 
+        },
+        SS316L: { 
+          name: 'SS316L', 
+          costPerKg: 22.00, 
+          fabCostPerKg: 18.00, 
+          allowableStress: 115, 
+          density: 8000, 
+          isPlastic: false 
+        },
+        Duplex: { 
+          name: 'Duplex 2205', 
+          costPerKg: 28.00, 
+          fabCostPerKg: 25.00, 
+          allowableStress: 115, 
+          density: 7800, 
+          isPlastic: false 
+        },
+        PE100: { 
+          name: 'Polyethylene (PE100)', 
+          costPerKg: 3.50, 
+          fabCostPerKg: 15.00, 
+          allowableStress: 8, 
+          density: 950, 
+          isPlastic: true 
+        }
+      },
+      cladding: {
+        None: { name: 'None', costPerM2: 0 },
+        SS304: { name: 'SS304 Strip Lining', costPerM2: 450 },
+        SS316L: { name: 'SS316L Strip Lining', costPerM2: 550 }
+      },
+      supports: {
+        Skirt: { name: 'Skirt (CS)', weightFactor: 0.08, costPerKg: 8.00 },
+        Legs: { name: 'Legs (CS)', weightFactor: 0.04, costPerKg: 10.00 },
+        Saddles: { name: 'Saddles (CS)', weightFactor: 0.06, costPerKg: 7.50 },
+        None: { name: 'None', weightFactor: 0, costPerKg: 0 }
+      },
+      paint: {
+        None: { name: 'None', costPerM2: 0 },
+        Standard: { name: 'Standard 2-coat', costPerM2: 45 }, // Paint + Blast approx
+        Epoxy: { name: 'Epoxy High-Perf', costPerM2: 60 },
+        Fireproof: { name: 'Fireproof Intumescent', costPerM2: 110 }
+      },
+      insulation: {
+        None: { name: 'None', costPerM3: 0, jacketCostPerM2: 0 },
+        MineralWool: { name: 'Mineral Wool', costPerM3: 180, jacketCostPerM2: 65 },
+        PU: { name: 'PU Foam', costPerM3: 250, jacketCostPerM2: 65 }
+      },
+      nozzles: {
+        small: { name: 'Nozzle <2"', cost: 400 },
+        medium: { name: 'Nozzle 3"-6"', cost: 850 },
+        large: { name: 'Nozzle 8"-12"', cost: 1600 },
+        manway: { name: 'Manway DN500', cost: 3500 }
+      },
+      internals: {
+        None: { name: 'None', type: 'none', cost: 0, unit: '' },
+        Demister: { name: 'Demister Pad (SS316)', type: 'area', cost: 450, unit: 'm²' },
+        Structured: { name: 'Structured Packing (SS316)', type: 'volume', cost: 380, unit: 'm³' },
+        Random: { name: 'Random Packing (SS316)', type: 'volume', cost: 150, unit: 'm³' },
+        Trays: { name: 'Tray Assembly (CS)', type: 'area', cost: 600, unit: 'm²' }
+      }
+    };
+
+    // ==========================================
+    // STATE
+    // ==========================================
+    let DATABASE = JSON.parse(JSON.stringify(DEFAULT_DATABASE));
+    
+    let state = {
+      orientation: 'vertical',
+      pressure: 10,
+      temperature: 80,
+      diameter: 2500,
+      length: 6000,
+      material: 'CS',
+      cladding: 'None',
+      nozzleSmall: 4,
+      nozzleMedium: 6,
+      nozzleLarge: 2,
+      manways: 1,
+      internalType: 'None',
+      internalQty: 0,
+      supportType: 'Skirt',
+      paintType: 'Standard',
+      insulationType: 'None',
+      insulationThickness: 100
+    };
+
+    // ==========================================
+    // DOM ELEMENTS
+    // ==========================================
+    const elements = {
+      // Inputs
+      orientation: document.getElementById('orientation'),
+      pressure: document.getElementById('pressure'),
+      temperature: document.getElementById('temperature'),
+      diameter: document.getElementById('diameter'),
+      length: document.getElementById('length'),
+      material: document.getElementById('material'),
+      cladding: document.getElementById('cladding'),
+      claddingGroup: document.getElementById('claddingGroup'),
+      peWarning: document.getElementById('peWarning'),
+      nozzleSmall: document.getElementById('nozzleSmall'),
+      nozzleMedium: document.getElementById('nozzleMedium'),
+      nozzleLarge: document.getElementById('nozzleLarge'),
+      manways: document.getElementById('manways'),
+      internalType: document.getElementById('internalType'),
+      internalQty: document.getElementById('internalQty'),
+      supportType: document.getElementById('supportType'),
+      paintType: document.getElementById('paintType'),
+      paintGroup: document.getElementById('paintGroup'),
+      insulationType: document.getElementById('insulationType'),
+      insulationThickness: document.getElementById('insulationThickness'),
+      insulationThicknessGroup: document.getElementById('insulationThicknessGroup'),
+      internalUnitLabel: document.getElementById('internalUnitLabel'),
+      
+      // Results
+      totalCost: document.getElementById('totalCost'),
+      totalWeight: document.getElementById('totalWeight'),
+      wallThickness: document.getElementById('wallThickness'),
+      previewDiameter: document.getElementById('previewDiameter'),
+      previewLength: document.getElementById('previewLength'),
+      previewThickness: document.getElementById('previewThickness'),
+      costBreakdown: document.getElementById('costBreakdown'),
+      contingency: document.getElementById('contingency'),
+      vesselSvg: document.getElementById('vesselSvg'),
+      
+      // Buttons & Modal
+      resetBtn: document.getElementById('resetBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      settingsModal: document.getElementById('settingsModal'),
+      openSettingsBtn: document.getElementById('openSettingsBtn'),
+      closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+      saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+      resetDefaultsBtn: document.getElementById('resetDefaultsBtn'),
+      settingsContainer: document.getElementById('settingsContainer')
+    };
+
+    // ==========================================
+    // LOAD / SAVE SETTINGS
+    // ==========================================
+    function loadSettings() {
+      const saved = localStorage.getItem('pvCostDatabase');
+      if (saved) {
+        try {
+          DATABASE = JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to load settings", e);
+          DATABASE = JSON.parse(JSON.stringify(DEFAULT_DATABASE));
+        }
+      }
+    }
+
+    function saveSettings() {
+      localStorage.setItem('pvCostDatabase', JSON.stringify(DATABASE));
+    }
+
+    // ==========================================
+    // POPULATE DROPDOWNS
+    // ==========================================
+    function populateDropdowns() {
+      // Materials
+      elements.material.innerHTML = Object.entries(DATABASE.materials)
+        .map(([key, val]) => `<option value="${key}">${val.name}</option>`)
+        .join('');
+
+      // Cladding
+      elements.cladding.innerHTML = Object.entries(DATABASE.cladding)
+        .map(([key, val]) => `<option value="${key}">${val.name}</option>`)
+        .join('');
+
+      // Supports
+      elements.supportType.innerHTML = Object.entries(DATABASE.supports)
+        .map(([key, val]) => `<option value="${key}">${val.name}</option>`)
+        .join('');
+
+      // Paint
+      elements.paintType.innerHTML = Object.entries(DATABASE.paint)
+        .map(([key, val]) => `<option value="${key}">${val.name}</option>`)
+        .join('');
+
+      // Insulation
+      elements.insulationType.innerHTML = Object.entries(DATABASE.insulation)
+        .map(([key, val]) => `<option value="${key}">${val.name}</option>`)
+        .join('');
+
+      // Internals
+      elements.internalType.innerHTML = Object.entries(DATABASE.internals)
+        .map(([key, val]) => `<option value="${key}">${val.name}</option>`)
+        .join('');
+    }
+
+    // ==========================================
+    // SETTINGS MODAL GENERATION
+    // ==========================================
+    function renderSettingsModal() {
+      let html = '';
+
+      // Helper to generate a section
+      const createSection = (title, description, content) => `
+        <div class="border-b border-[var(--border)] pb-6">
+          <h3 class="text-md font-semibold text-[var(--accent)] mb-1">${title}</h3>
+          <p class="text-xs text-[var(--fg-muted)] mb-4">${description}</p>
+          <div class="grid gap-3">
+            ${content}
+          </div>
+        </div>
+      `;
+
+      // Helper to generate input rows
+      const createInput = (label, id, value, unit, type = 'number', step = 'any') => `
+        <div class="grid grid-cols-[1fr,120px,40px] gap-2 items-center bg-[var(--card)] p-2 rounded">
+          <label class="text-sm text-[var(--fg-muted)]">${label}</label>
+          <input type="${type}" step="${step}" id="${id}" value="${value}" class="settings-input text-right">
+          <span class="text-xs text-[var(--fg-muted)]">${unit}</span>
+        </div>
+      `;
+
+      // 1. Materials
+      let matContent = '';
+      Object.entries(DATABASE.materials).forEach(([key, mat]) => {
+        matContent += `<div class="mb-4 p-3 border border-[var(--border)] rounded bg-[var(--bg)]"><p class="font-semibold text-sm mb-2">${mat.name}</p>`;
+        matContent += createInput('Material Cost', `set-mat-${key}-cost`, mat.costPerKg, '€/kg');
+        matContent += createInput('Fabrication Cost', `set-mat-${key}-fab`, mat.fabCostPerKg, '€/kg');
+        matContent += createInput('Allowable Stress', `set-mat-${key}-stress`, mat.allowableStress, 'MPa');
+        matContent += createInput('Density', `set-mat-${key}-density`, mat.density, 'kg/m³');
+        matContent += '</div>';
+      });
+      html += createSection('Materials', 'Material and fabrication costs per kilogram.', matContent);
+
+      // 2. Nozzles
+      let nozContent = '';
+      Object.entries(DATABASE.nozzles).forEach(([key, noz]) => {
+        nozContent += createInput(noz.name, `set-noz-${key}`, noz.cost, '€');
+      });
+      html += createSection('Nozzles', 'Cost per nozzle assembly (flange, pipe, reinforcement).', nozContent);
+
+      // 3. Supports
+      let suppContent = '';
+      Object.entries(DATABASE.supports).forEach(([key, sup]) => {
+        if(key === 'None') return;
+        suppContent += `<div class="mb-2"><p class="text-xs font-medium text-[var(--fg)] mb-1">${sup.name}</p>`;
+        suppContent += createInput('Weight Factor', `set-supp-${key}-wf`, sup.weightFactor, '%/100');
+        suppContent += createInput('Cost per kg', `set-supp-${key}-cost`, sup.costPerKg, '€/kg');
+        suppContent += '</div>';
+      });
+      html += createSection('Supports', 'Support weight factor (percentage of vessel weight) and cost.', suppContent);
+
+      // 4. Paint & Cladding
+      let finishContent = '<h4 class="text-sm font-semibold mb-2 text-[var(--fg)]">Painting</h4>';
+      Object.entries(DATABASE.paint).forEach(([key, p]) => {
+        finishContent += createInput(p.name, `set-paint-${key}`, p.costPerM2, '€/m²');
+      });
+      finishContent += '<h4 class="text-sm font-semibold mb-2 mt-4 text-[var(--fg)]">Cladding</h4>';
+      Object.entries(DATABASE.cladding).forEach(([key, c]) => {
+        finishContent += createInput(c.name, `set-clad-${key}`, c.costPerM2, '€/m²');
+      });
+      html += createSection('Finishing', 'Surface treatment costs per square meter.', finishContent);
+
+      // 5. Insulation
+      let insulContent = '';
+      Object.entries(DATABASE.insulation).forEach(([key, ins]) => {
+        if(key === 'None') return;
+        insulContent += `<div class="mb-2"><p class="text-xs font-medium text-[var(--fg)] mb-1">${ins.name}</p>`;
+        insulContent += createInput('Material + Install', `set-ins-${key}-cost`, ins.costPerM3, '€/m³');
+        insulContent += createInput('Jacketing', `set-ins-${key}-jacket`, ins.jacketCostPerM2, '€/m²');
+        insulContent += '</div>';
+      });
+      html += createSection('Insulation', 'Insulation costs (volumetric) and jacketing costs.', insulContent);
+
+      // 6. Internals
+      let intContent = '';
+      Object.entries(DATABASE.internals).forEach(([key, int]) => {
+        intContent += createInput(int.name + (int.unit ? ` (${int.unit})` : ''), `set-int-${key}`, int.cost, int.unit ? '€/'+int.unit : '€');
+      });
+      html += createSection('Internals', 'Internal equipment costs.', intContent);
+
+      elements.settingsContainer.innerHTML = html;
+
+      // Attach listeners
+      elements.settingsContainer.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', handleSettingChange);
+      });
+    }
+
+    function handleSettingChange(e) {
+      const id = e.target.id;
+      const value = parseFloat(e.target.value);
+      
+      // Parse ID: set-category-key-prop or set-category-key
+      const parts = id.split('-');
+      
+      if (parts[1] === 'mat') {
+        const matKey = parts[2];
+        const prop = parts[3];
+        if(prop === 'cost') DATABASE.materials[matKey].costPerKg = value;
+        else if(prop === 'fab') DATABASE.materials[matKey].fabCostPerKg = value;
+        else if(prop === 'stress') DATABASE.materials[matKey].allowableStress = value;
+        else if(prop === 'density') DATABASE.materials[matKey].density = value;
+      }
+      else if (parts[1] === 'noz') {
+        const nozKey = parts[2];
+        DATABASE.nozzles[nozKey].cost = value;
+      }
+      else if (parts[1] === 'supp') {
+        const suppKey = parts[2];
+        const prop = parts[3];
+        if(prop === 'wf') DATABASE.supports[suppKey].weightFactor = value;
+        else if(prop === 'cost') DATABASE.supports[suppKey].costPerKg = value;
+      }
+      else if (parts[1] === 'paint') {
+        const paintKey = parts[2];
+        DATABASE.paint[paintKey].costPerM2 = value;
+      }
+      else if (parts[1] === 'clad') {
+        const cladKey = parts[2];
+        DATABASE.cladding[cladKey].costPerM2 = value;
+      }
+      else if (parts[1] === 'ins') {
+        const insKey = parts[2];
+        const prop = parts[3];
+        if(prop === 'cost') DATABASE.insulation[insKey].costPerM3 = value;
+        else if(prop === 'jacket') DATABASE.insulation[insKey].jacketCostPerM2 = value;
+      }
+      else if (parts[1] === 'int') {
+        const intKey = parts[2];
+        DATABASE.internals[intKey].cost = value;
+      }
+      
+      // Recalculate immediately
+      updateUI();
+    }
+
+    // ==========================================
+    // CALCULATIONS
+    // ==========================================
+    function calculateThickness(pressure, diameter, material, temperature) {
+      const mat = DATABASE.materials[material];
+      let S = mat.allowableStress;
+      
+      if (mat.isPlastic) {
+        if (temperature > 40) S *= 0.6; 
+        if (temperature > 60) S *= 0.4;
+      } else {
+        if (temperature > 300) S *= 0.8;
+        else if (temperature > 400) S *= 0.6;
+      }
+      
+      const E = 0.85;
+      const P = pressure;
+      const D = diameter;
+      
+      let t = (P * D) / (2 * S * 10 * E - 0.6 * P);
+      
+      const CA = material === 'CS' ? 2 : 0;
+      t += CA;
+      
+      const minT = mat.isPlastic ? 8 : 6;
+      t = Math.max(t, minT);
+      
+      return Math.ceil(t / 2) * 2;
+    }
+
+    function calculateWeight(diameter, length, thickness, material) {
+      const mat = DATABASE.materials[material];
+      const density = mat.density;
+      
+      const D = diameter / 1000;
+      const L = length / 1000;
+      const t = thickness / 1000;
+      
+      const shellWeight = Math.PI * D * L * t * density;
+      const headWeight = 2 * (1.2 * Math.PI * Math.pow(D/2, 2) * t * density);
+      
+      return shellWeight + headWeight;
+    }
+
+    function calculateInternalArea(diameter, length) {
+      const D = diameter / 1000;
+      const L = length / 1000;
+      return Math.PI * D * L;
+    }
+
+    function calculateExternalArea(diameter, length, thickness) {
+      const D = (diameter + 2 * thickness) / 1000;
+      const L = length / 1000;
+      return Math.PI * D * (L + 0.5 * D);
+    }
+
+    function calculate() {
+      const mat = DATABASE.materials[state.material];
+      const clad = DATABASE.cladding[state.cladding];
+      const supp = DATABASE.supports[state.supportType];
+      const paint = DATABASE.paint[state.paintType];
+      const insul = DATABASE.insulation[state.insulationType];
+      const intern = DATABASE.internals[state.internalType];
+      
+      const thickness = calculateThickness(state.pressure, state.diameter, state.material, state.temperature);
+      const weight = calculateWeight(state.diameter, state.length, thickness, state.material);
+      
+      const materialCost = weight * mat.costPerKg;
+      const fabricationCost = weight * mat.fabCostPerKg;
+      
+      const internalArea = calculateInternalArea(state.diameter, state.length);
+      const claddingCost = mat.isPlastic ? 0 : internalArea * clad.costPerM2;
+      
+      const supportWeight = weight * supp.weightFactor;
+      const supportCost = supportWeight * supp.costPerKg;
+      
+      const nozzleCost = 
+        state.nozzleSmall * DATABASE.nozzles.small.cost +
+        state.nozzleMedium * DATABASE.nozzles.medium.cost +
+        state.nozzleLarge * DATABASE.nozzles.large.cost +
+        state.manways * DATABASE.nozzles.manway.cost;
+      
+      let internalCost = 0;
+      if (intern.type === 'area') {
+        internalCost = state.internalQty * intern.cost;
+      } else if (intern.type === 'volume') {
+        const internalVolume = calculateInternalArea(state.diameter, state.length) * (state.internalQty / 1000);
+        internalCost = internalVolume * intern.cost;
+      }
+      
+      const externalArea = calculateExternalArea(state.diameter, state.length, thickness);
+      const paintCost = mat.isPlastic ? 0 : externalArea * paint.costPerM2;
+      
+      let insulationCost = 0;
+      if (state.insulationType !== 'None') {
+        const insulationVolume = externalArea * (state.insulationThickness / 1000);
+        insulationCost = insulationVolume * insul.costPerM3 + externalArea * insul.jacketCostPerM2;
+      }
+      
+      const baseCost = materialCost + fabricationCost + claddingCost + supportCost + nozzleCost + internalCost + paintCost + insulationCost;
+      const contingency = baseCost * 0.15;
+      const totalCost = baseCost + contingency;
+      
+      return {
+        thickness,
+        weight: Math.round(weight),
+        costs: {
+          material: { value: materialCost, label: `Material (${mat.name})` },
+          fabrication: { value: fabricationCost, label: 'Fabrication' },
+          cladding: { value: claddingCost, label: (clad.name !== 'None' && !mat.isPlastic) ? `Cladding (${clad.name})` : null },
+          support: { value: supportCost, label: supp.weightFactor > 0 ? `Supports (${supp.name})` : null },
+          nozzles: { value: nozzleCost, label: 'Nozzles & Manways' },
+          internals: { value: internalCost, label: intern.name !== 'None' ? `Internals (${intern.name})` : null },
+          paint: { value: paintCost, label: (paint.name !== 'None' && !mat.isPlastic) ? `Painting (${paint.name})` : null },
+          insulation: { value: insulationCost, label: insul.name !== 'None' ? `Insulation (${insul.name})` : null }
+        },
+        contingency,
+        totalCost
+      };
+    }
+
+    // ==========================================
+    // UI UPDATES
+    // ==========================================
+    function formatCurrency(value) {
+      return '€' + Math.round(value).toLocaleString('en-IE');
+    }
+
+    function formatNumber(value, suffix = '') {
+      return Math.round(value).toLocaleString() + suffix;
+    }
+
+    function updateUI() {
+      const results = calculate();
+      const mat = DATABASE.materials[state.material];
+      
+      if (mat.isPlastic) {
+        elements.claddingGroup.classList.add('hidden-field');
+        elements.paintGroup.classList.add('hidden-field');
+        elements.peWarning.classList.remove('hidden');
+        state.cladding = 'None';
+        state.paintType = 'None';
+      } else {
+        elements.claddingGroup.classList.remove('hidden-field');
+        elements.paintGroup.classList.remove('hidden-field');
+        elements.peWarning.classList.add('hidden');
+      }
+      
+      elements.totalCost.textContent = formatCurrency(results.totalCost);
+      elements.totalWeight.textContent = formatNumber(results.weight, ' kg');
+      elements.wallThickness.textContent = results.thickness + ' mm';
+      elements.previewDiameter.textContent = state.diameter;
+      elements.previewLength.textContent = state.length;
+      elements.previewThickness.textContent = results.thickness;
+      
+      elements.contingency.textContent = formatCurrency(results.contingency);
+      
+      const breakdownHTML = Object.entries(results.costs)
+        .filter(([key, data]) => data.label && data.value > 0)
+        .sort((a, b) => b[1].value - a[1].value)
+        .map(([key, data]) => {
+          const percentage = (data.value / (results.totalCost - results.contingency)) * 100;
+          return `
+            <div class="group">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-[var(--fg-muted)]">${data.label}</span>
+                <span class="font-mono">${formatCurrency(data.value)}</span>
+              </div>
+              <div class="cost-bar">
+                <div class="cost-bar-fill bg-[var(--accent)]" style="width: ${percentage}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      
+      elements.costBreakdown.innerHTML = breakdownHTML;
+      
+      drawVessel(results.thickness, mat.isPlastic);
+      
+      const intern = DATABASE.internals[state.internalType];
+      elements.internalUnitLabel.textContent = intern.unit ? `Quantity (${intern.unit})` : 'Quantity';
+      
+      if (state.insulationType !== 'None') {
+        elements.insulationThicknessGroup.classList.remove('opacity-50', 'pointer-events-none');
+      } else {
+        elements.insulationThicknessGroup.classList.add('opacity-50', 'pointer-events-none');
+      }
+    }
+
+    function drawVessel(thickness, isPlastic) {
+      const svg = elements.vesselSvg;
+      const isVertical = state.orientation === 'vertical';
+      
+      const maxDim = 250;
+      let w, h;
+      
+      if (isVertical) {
+        const scale = maxDim / Math.max(state.diameter, state.length);
+        w = state.diameter * scale * 0.6;
+        h = state.length * scale * 0.8;
+      } else {
+        const scale = maxDim / Math.max(state.diameter, state.length);
+        w = state.length * scale * 0.6;
+        h = state.diameter * scale * 0.8;
+      }
+      
+      w = Math.max(40, w);
+      h = Math.max(60, h);
+      
+      const cx = 100;
+      const cy = 150;
+      
+      const strokeClass = 'vessel-preview active';
+      const fillOpacity = isPlastic ? 0.15 : 0.1;
+      
+      let svgContent = '';
+      
+      if (isVertical) {
+        const x = cx - w/2;
+        const y = cy - h/2;
+        
+        svgContent += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" class="${strokeClass}" fill="rgba(249,115,22,${fillOpacity})"/>`;
+        svgContent += `<ellipse cx="${cx}" cy="${y}" rx="${w/2}" ry="${w/6}" class="${strokeClass}"/>`;
+        svgContent += `<ellipse cx="${cx}" cy="${y+h}" rx="${w/2}" ry="${w/6}" class="${strokeClass}"/>`;
+        
+        if (state.supportType === 'Skirt') {
+          const skirtH = h * 0.15;
+          svgContent += `<rect x="${x+5}" y="${y+h}" width="${w-10}" height="${skirtH}" class="vessel-preview" fill="rgba(255,255,255,0.05)"/>`;
+        } else if (state.supportType === 'Legs') {
+          const legH = h * 0.12;
+          svgContent += `<rect x="${x+5}" y="${y+h-5}" width="8" height="${legH}" class="vessel-preview"/>`;
+          svgContent += `<rect x="${x+w-13}" y="${y+h-5}" width="8" height="${legH}" class="vessel-preview"/>`;
+        }
+        
+        const nozzleCount = Math.min(4, state.nozzleSmall + state.nozzleMedium + state.nozzleLarge);
+        for (let i = 0; i < nozzleCount; i++) {
+          const ny = y + 20 + (i * (h - 40) / Math.max(1, nozzleCount - 1));
+          svgContent += `<line x1="${x+w}" y1="${ny}" x2="${x+w+12}" y2="${ny}" class="vessel-preview" stroke-width="3"/>`;
+        }
+        
+        if (state.manways > 0) {
+          svgContent += `<rect x="${cx-8}" y="${y-h*0.05-15}" width="16" height="15" class="vessel-preview"/>`;
+        }
+        
+      } else {
+        const x = cx - w/2;
+        const y = cy - h/2;
+        
+        svgContent += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" class="${strokeClass}" fill="rgba(249,115,22,${fillOpacity})"/>`;
+        svgContent += `<ellipse cx="${x}" cy="${cy}" rx="${h/2}" ry="${h/2}" class="${strokeClass}"/>`;
+        svgContent += `<ellipse cx="${x+w}" cy="${cy}" rx="${h/2}" ry="${h/2}" class="${strokeClass}"/>`;
+        
+        if (state.supportType === 'Saddles') {
+          const saddleW = h * 0.3;
+          const saddleH = h * 0.4;
+          svgContent += `<path d="M ${x+w*0.2} ${y+h} L ${x+w*0.2-saddleW/2} ${y+h+saddleH} L ${x+w*0.2+saddleW/2} ${y+h+saddleH} Z" class="vessel-preview" fill="rgba(255,255,255,0.05)"/>`;
+          svgContent += `<path d="M ${x+w*0.8} ${y+h} L ${x+w*0.8-saddleW/2} ${y+h+saddleH} L ${x+w*0.8+saddleW/2} ${y+h+saddleH} Z" class="vessel-preview" fill="rgba(255,255,255,0.05)"/>`;
+        }
+        
+        const nozzleCount = Math.min(4, state.nozzleSmall + state.nozzleMedium + state.nozzleLarge);
+        for (let i = 0; i < nozzleCount; i++) {
+          const nx = x + 20 + (i * (w - 40) / Math.max(1, nozzleCount - 1));
+          svgContent += `<line x1="${nx}" y1="${y}" x2="${nx}" y2="${y-12}" class="vessel-preview" stroke-width="3"/>`;
+        }
+      }
+      
+      if (state.insulationType !== 'None') {
+        if (isVertical) {
+          const x = cx - w/2 - 8;
+          const y = cy - h/2 - 5;
+          svgContent += `<rect x="${x}" y="${y}" width="${w+16}" height="${h+10}" rx="5" class="vessel-preview" stroke-dasharray="4 2" fill="none"/>`;
+        } else {
+          const x = cx - w/2 - 5;
+          const y = cy - h/2 - 8;
+          svgContent += `<rect x="${x}" y="${y}" width="${w+10}" height="${h+16}" rx="5" class="vessel-preview" stroke-dasharray="4 2" fill="none"/>`;
+        }
+      }
+      
+      svg.innerHTML = svgContent;
+    }
+
+    // ==========================================
+    // EVENT HANDLERS
+    // ==========================================
+    function updateState() {
+      state.orientation = elements.orientation.value;
+      state.pressure = parseFloat(elements.pressure.value) || 1;
+      state.temperature = parseFloat(elements.temperature.value) || 20;
+      state.diameter = parseFloat(elements.diameter.value) || 500;
+      state.length = parseFloat(elements.length.value) || 1000;
+      state.material = elements.material.value;
+      state.cladding = elements.cladding.value;
+      state.nozzleSmall = parseInt(elements.nozzleSmall.value) || 0;
+      state.nozzleMedium = parseInt(elements.nozzleMedium.value) || 0;
+      state.nozzleLarge = parseInt(elements.nozzleLarge.value) || 0;
+      state.manways = parseInt(elements.manways.value) || 0;
+      state.internalType = elements.internalType.value;
+      state.internalQty = parseFloat(elements.internalQty.value) || 0;
+      state.supportType = elements.supportType.value;
+      state.paintType = elements.paintType.value;
+      state.insulationType = elements.insulationType.value;
+      state.insulationThickness = parseFloat(elements.insulationThickness.value) || 100;
+      
+      updateUI();
+    }
+
+    function resetForm() {
+      elements.orientation.value = 'vertical';
+      elements.pressure.value = 10;
+      elements.temperature.value = 80;
+      elements.diameter.value = 2500;
+      elements.length.value = 6000;
+      elements.material.value = 'CS';
+      elements.cladding.value = 'None';
+      elements.nozzleSmall.value = 4;
+      elements.nozzleMedium.value = 6;
+      elements.nozzleLarge.value = 2;
+      elements.manways.value = 1;
+      elements.internalType.value = 'None';
+      elements.internalQty.value = 0;
+      elements.supportType.value = 'Skirt';
+      elements.paintType.value = 'Standard';
+      elements.insulationType.value = 'None';
+      elements.insulationThickness.value = 100;
+      
+      updateState();
+    }
+
+    function exportData() {
+      const results = calculate();
+      const mat = DATABASE.materials[state.material];
+      
+      const data = {
+        'Input Parameters': {
+          'Orientation': state.orientation,
+          'Design Pressure (bar)': state.pressure,
+          'Design Temperature (C)': state.temperature,
+          'Internal Diameter (mm)': state.diameter,
+          'Shell Length (mm)': state.length,
+          'Shell Material': mat.name,
+          'Internal Cladding': mat.isPlastic ? 'N/A (Plastic Vessel)' : DATABASE.cladding[state.cladding].name,
+          'Support Type': DATABASE.supports[state.supportType].name,
+          'Paint Specification': mat.isPlastic ? 'N/A (Plastic Vessel)' : DATABASE.paint[state.paintType].name,
+          'Insulation Type': DATABASE.insulation[state.insulationType].name
+        },
+        'Nozzles': {
+          'Nozzles <2"': state.nozzleSmall,
+          'Nozzles 3"-6"': state.nozzleMedium,
+          'Nozzles 8"-12"': state.nozzleLarge,
+          'Manways': state.manways
+        },
+        'Results': {
+          'Calculated Thickness (mm)': results.thickness,
+          'Empty Weight (kg)': results.weight,
+          'Total Cost (EUR)': results.totalCost.toFixed(2)
+        },
+        'Cost Breakdown': {}
+      };
+      
+      Object.entries(results.costs).forEach(([key, item]) => {
+        if (item.label) data['Cost Breakdown'][item.label] = item.value.toFixed(2);
+      });
+      data['Cost Breakdown']['Engineering & Contingency (15%)'] = results.contingency.toFixed(2);
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vessel-estimate-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function openModal() {
+      renderSettingsModal();
+      elements.settingsModal.classList.add('active');
+    }
+
+    function closeModal() {
+      saveSettings();
+      elements.settingsModal.classList.remove('active');
+    }
+
+    function resetDatabase() {
+      if(confirm('Are you sure you want to reset all cost parameters to default values?')) {
+        DATABASE = JSON.parse(JSON.stringify(DEFAULT_DATABASE));
+        saveSettings();
+        renderSettingsModal();
+        populateDropdowns();
+        updateUI();
+      }
+    }
+
+    // ==========================================
+    // INTERSECTION OBSERVER FOR ANIMATIONS
+    // ==========================================
+    function initScrollReveal() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              entry.target.classList.add('visible');
+            }, index * 100);
+          }
+        });
+      }, { threshold: 0.1 });
+      
+      document.querySelectorAll('.section-reveal').forEach(el => observer.observe(el));
+    }
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+    function init() {
+      loadSettings();
+      populateDropdowns();
+      
+      const inputs = [
+        'orientation', 'pressure', 'temperature', 'diameter', 'length',
+        'material', 'cladding', 'nozzleSmall', 'nozzleMedium', 'nozzleLarge',
+        'manways', 'internalType', 'internalQty', 'supportType', 'paintType',
+        'insulationType', 'insulationThickness'
+      ];
+      
+      inputs.forEach(id => {
+        elements[id].addEventListener('input', updateState);
+        elements[id].addEventListener('change', updateState);
+      });
+      
+      elements.resetBtn.addEventListener('click', resetForm);
+      elements.exportBtn.addEventListener('click', exportData);
+      elements.openSettingsBtn.addEventListener('click', openModal);
+      elements.closeSettingsBtn.addEventListener('click', closeModal);
+      elements.saveSettingsBtn.addEventListener('click', closeModal);
+      elements.resetDefaultsBtn.addEventListener('click', resetDatabase);
+      
+      // Close modal on overlay click
+      elements.settingsModal.addEventListener('click', (e) => {
+        if(e.target === elements.settingsModal) closeModal();
+      });
+      
+      updateState();
+      initScrollReveal();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("service-worker.js");}</script></body>
+</html>
